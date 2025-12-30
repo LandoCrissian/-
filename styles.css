@@ -56,6 +56,7 @@ body{
     0 0 12px rgba(120,160,255,.22),
     0 0 28px rgba(180,120,255,.12);
   transform: translateZ(0);
+  transition: text-shadow 1.8s ease;
 }
 
 .sub{
