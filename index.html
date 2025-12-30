@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>?</title>
+  <meta name="description" content="?" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="?" />
+  <meta property="og:description" content="?" />
+  <meta property="og:type" content="website" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="?" />
+  <meta name="twitter:description" content="?" />
+
+  <link rel="icon" href="favicon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Subtle film grain + vignette -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="mark" id="mark" aria-label="question mark">?</div>
+      <div class="sub">you’re here because you’re curious</div>
+      <div class="hint">scroll</div>
+    </section>
+
+    <!-- SCROLL LINES -->
+    <section class="lines" id="lines">
+      <p class="line reveal">most things are explained too early</p>
+      <p class="line reveal">certainty is usually a trap</p>
+      <p class="line reveal">questions age better than answers</p>
+
+      <div class="gap"></div>
+
+      <p class="line reveal faint">this is what we can say</p>
+      <p class="line reveal bigq">?</p>
+      <div class="cursor reveal" aria-hidden="true"></div>
+
+      <div class="gap"></div>
+
+      <p class="line reveal">some things reveal themselves</p>
+      <p class="line reveal">others reveal you</p>
+      <p class="line reveal">timing matters</p>
+      <p class="line reveal">you’re still early</p>
+
+      <div class="gap"></div>
+
+      <!-- ASK BAR -->
+      <div class="ask reveal" id="ask">
+        <label class="sr" for="askInput">Ask</label>
+        <input id="askInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="ask" />
+        <div class="response" id="response" aria-live="polite"></div>
+      </div>
+
+      <div class="endspace"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
