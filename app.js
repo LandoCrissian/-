@@ -7,25 +7,60 @@ const askInput = document.getElementById("askInput");
 const markEl = document.getElementById("mark");
 
 // ------------------------------
+// LOCKED MODE (v1 freeze)
+// ------------------------------
+// Keep this false until you are READY to reveal factual info.
+// When false: site behaves exactly like today (always "?").
+const ANSWER_MODE = false;
+
+// ------------------------------
+// LAUNCH FACTS (fill later, keep empty now)
+// ------------------------------
+const FACTS = {
+  ca: "",                 // e.g. "FQdsGHDj...pump"
+  buy: "",                // e.g. "https://pump.fun/..."
+  community: "",          // e.g. "https://x.com/i/communities/...."
+  fees: ""                // e.g. "creator fees → buybacks + rewards (transparent)"
+};
+
+// ------------------------------
+// ANSWER MAP (minimal, factual, short)
+// Only used when ANSWER_MODE = true
+// ------------------------------
+const ANSWERS = [
+  {
+    match: /(ca|contract|address)\b/i,
+    text: () => (FACTS.ca ? `CA: ${FACTS.ca}` : "?")
+  },
+  {
+    match: /(buy|where.*buy|purchase|get)\b/i,
+    text: () => (FACTS.buy ? `BUY: ${FACTS.buy}` : "?")
+  },
+  {
+    match: /(community|join|where.*talk|discord|telegram)\b/i,
+    text: () => (FACTS.community ? `COMMUNITY: ${FACTS.community}` : "?")
+  },
+  {
+    match: /(fees|creator fee|tax|where.*fees|used)\b/i,
+    text: () => (FACTS.fees ? `FEES: ${FACTS.fees}` : "?")
+  }
+];
+
+// ------------------------------
 // EGG CONFIG (private knobs)
 // ------------------------------
-
-// Daily "time gate" window (UTC). Keep it obscure.
 const TIME_GATE = {
   hour: 3,         // 03:33 UTC (example)
   minute: 33,
   windowSeconds: 60
 };
 
-// Rare ask behavior
-const RARE_THINK_CHANCE = 0.05;     // 5%: longer delay, no glitch
+const RARE_THINK_CHANCE = 0.05;       // 5%: longer delay, no glitch
 const VERY_RARE_SILENT_CHANCE = 0.01; // 1%: show nothing (deniable)
 
-// Micro movement (per session)
-const MICRO_MOVE_CHANCE = 0.22;     // 22% chance per session
-const MICRO_MOVE_PX = 2;            // max shift magnitude
+const MICRO_MOVE_CHANCE = 0.22;       // 22% chance per session
+const MICRO_MOVE_PX = 2;              // max shift magnitude
 
-// DevTools whisper
 const DEVTOOLS_WHISPER = "// you’re paying attention";
 
 // ------------------------------
@@ -53,7 +88,21 @@ function glitchPulse() {
 function showResponse(char = "?") {
   responseEl.textContent = char;
   responseEl.classList.add("show");
-  setTimeout(() => responseEl.classList.remove("show"), 2000);
+  setTimeout(() => responseEl.classList.remove("show"), 2500);
+}
+
+function resolveAnswer(userText) {
+  if (!ANSWER_MODE) return null;
+  const t = (userText || "").trim();
+  if (!t) return null;
+
+  for (const a of ANSWERS) {
+    if (a.match.test(t)) {
+      const out = a.text();
+      return (out && out.trim()) ? out : "?";
+    }
+  }
+  return null; // not matched → fall through to normal "?"
 }
 
 // ------------------------------
@@ -77,8 +126,6 @@ reveals.forEach(el => io.observe(el));
   const dx = randInt(-MICRO_MOVE_PX, MICRO_MOVE_PX);
   const dy = randInt(-MICRO_MOVE_PX, MICRO_MOVE_PX);
 
-  // Apply a subtle translate without animation.
-  // Deniable. Small. Session-only.
   markEl.style.transform = `translate(${dx}px, ${dy}px) translateZ(0)`;
 })();
 
@@ -86,16 +133,13 @@ reveals.forEach(el => io.observe(el));
 // EGG #5: DevTools Whisper (quiet)
 // ------------------------------
 (function devtoolsWhisper() {
-  // Only print once, but not in a way that screams "puzzle".
-  // A single line comment is enough.
   try {
-    // This will show up for anyone inspecting, without being a feature.
     console.log(DEVTOOLS_WHISPER);
   } catch (_) {}
 })();
 
 // ------------------------------
-// Ask bar behavior + Eggs
+// Ask bar behavior + Eggs (+ optional Answers)
 // ------------------------------
 let busy = false;
 
@@ -106,47 +150,48 @@ askInput.addEventListener("keydown", (e) => {
 
   busy = true;
 
-  // Capture but do nothing with it (we want indifference)
   const userText = (askInput.value || "").trim();
   askInput.value = "";
+
+  // If ANSWER_MODE is on and question matches, we return the answer
+  // with a slightly "considered" delay and NO glitch.
+  const maybeAnswer = resolveAnswer(userText);
 
   // BASE delay feels like "thinking"
   let delay = 360 + Math.floor(Math.random() * 220);
 
-  // EGG #1: Time Gate changes the "thinking" feel (no new text)
-  // During the gate, thinking is heavier + slightly more consistent.
   const timeGate = inTimeGateUTC();
-  if (timeGate) {
-    delay = 1200 + Math.floor(Math.random() * 400);
-  }
+  if (timeGate) delay = 1200 + Math.floor(Math.random() * 400);
 
-  // EGG #3: Rare "consideration" (longer delay, no glitch)
   const rareThink = Math.random() < RARE_THINK_CHANCE;
-
-  // VERY rare: "nothing happens" (deniable)
   const veryRareSilent = Math.random() < VERY_RARE_SILENT_CHANCE;
 
+  // Answers should feel deliberate (slower, no glitch)
+  if (maybeAnswer) {
+    delay = 900 + Math.floor(Math.random() * 450);
+  }
+
   setTimeout(() => {
-    // If silent egg triggers, do nothing.
     if (veryRareSilent) {
       busy = false;
       return;
     }
 
-    // Rare think: no glitch, just response
+    if (maybeAnswer) {
+      showResponse(maybeAnswer);
+      busy = false;
+      return;
+    }
+
     if (rareThink || timeGate) {
       showResponse("?");
       busy = false;
       return;
     }
 
-    // Normal behavior
     glitchPulse();
     showResponse("?");
     busy = false;
-
-    // Egg hook placeholder (kept OFF for now)
-    // eggHook(userText);
 
   }, delay);
 });
@@ -157,15 +202,10 @@ askInput.addEventListener("keydown", (e) => {
 let focusTimer = null;
 
 askInput.addEventListener("focus", () => {
-  // After a few seconds of staring, a micro glitch pulse can occur rarely.
-  // This makes the site feel like it noticed them.
   const chance = 0.12;
 
   focusTimer = setTimeout(() => {
-    if (Math.random() < chance) {
-      glitchPulse();
-      // No response shown. Just a nudge.
-    }
+    if (Math.random() < chance) glitchPulse();
   }, 7000);
 });
 
@@ -173,8 +213,3 @@ askInput.addEventListener("blur", () => {
   if (focusTimer) clearTimeout(focusTimer);
   focusTimer = null;
 });
-
-// Placeholder for future eggs (do nothing yet)
-function eggHook(_text) {
-  // Intentionally empty in v1.
-}
