@@ -218,3 +218,51 @@ body.glitch{
 }
 
 /* ? */
+
+.troll{
+  margin-top: 28px;
+  padding: 14px 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,.03);
+  max-width: 520px;
+}
+
+.troll-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+
+.troll-label{ opacity: .65; }
+
+.troll-status{
+  font-weight: 700;
+  letter-spacing: .22em;
+}
+
+.troll-combo{
+  margin: 10px 0 12px;
+  font-size: 26px;
+  letter-spacing: .10em;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  opacity: .95;
+}
+
+.troll-ticker{
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .12em;
+}
+
+.troll-sub{
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: .55;
+  letter-spacing: .06em;
+}
