@@ -19,7 +19,7 @@ const ANSWER_MODE = false;
 const FACTS = {
   ca: "",                 // e.g. "FQdsGHDj...pump"
   buy: "",                // e.g. "https://pump.fun/..."
-  community: "",          // e.g. "https://x.com/i/communities/...."
+  community: "https://x.com/i/communities/2006505348979687806",          // e.g. "https://x.com/i/communities/...."
   fees: ""                // e.g. "creator fees → buybacks + rewards (transparent)"
 };
 
@@ -177,11 +177,19 @@ askInput.addEventListener("keydown", (e) => {
       return;
     }
 
-    if (maybeAnswer) {
-      showResponse(maybeAnswer);
-      busy = false;
-      return;
-    }
+    // Community/comms always wins (even in locked mode)
+if (COMMUNITY_MATCH.test(userText) && FACTS.community) {
+  showResponseFor(60000, `COMMUNITY: ${FACTS.community}`);
+  busy = false;
+  return;
+}
+
+// Normal answer mode (when enabled)
+if (maybeAnswer) {
+  showResponse(maybeAnswer);
+  busy = false;
+  return;
+}
 
     if (rareThink || timeGate) {
       showResponse("?");
@@ -194,6 +202,10 @@ askInput.addEventListener("keydown", (e) => {
     busy = false;
 
   }, delay);
+
+  if (COMMUNITY_MATCH.test(userText) && FACTS.community) {
+  delay = 420; // fast + deliberate
+}
 });
 
 // ------------------------------
