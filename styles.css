@@ -6,7 +6,6 @@
   --faint: rgba(255,255,255,.40);
   --ultrafaint: rgba(255,255,255,.18);
 
-  /* cinematic accents */
   --c1: rgba(120,160,255,.22);
   --c2: rgba(180,120,255,.16);
   --c3: rgba(80,255,220,.10);
@@ -17,14 +16,15 @@
   --stroke2: rgba(255,255,255,.14);
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
 html{ scroll-behavior:smooth; }
+html,body{ background:#000; }
 
+/* ---------------- BODY ---------------- */
 body{
   margin:0;
-  background:var(--bg);
+  background:#000;
   color:var(--fg);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
   overflow-x:hidden;
@@ -32,15 +32,9 @@ body{
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
   -webkit-tap-highlight-color: transparent;
-
-  /* soft depth */
-  background-image:
-    radial-gradient(1200px 900px at 20% 15%, rgba(120,160,255,.10), transparent 60%),
-    radial-gradient(900px 700px at 80% 30%, rgba(180,120,255,.08), transparent 60%),
-    radial-gradient(800px 600px at 55% 85%, rgba(80,255,220,.05), transparent 55%);
 }
 
-/* selection should feel cold, not webby */
+/* selection should feel cold */
 ::selection{ background: rgba(255,255,255,.10); }
 
 /* accessibility */
@@ -48,44 +42,49 @@ body{
   position:absolute;
   width:1px;height:1px;
   padding:0;margin:-1px;
-  overflow:hidden;clip:rect(0,0,0,0);
-  white-space:nowrap;border:0;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
 }
 
-/* ---------- CINEMATIC LAYERS ---------- */
-
-/* moving aurora haze (very subtle) */
+/* ---------------- CINEMATIC AURA (SAFE) ---------------- */
 body::before{
   content:"";
-  position:fixed; inset:-20%;
+  position:fixed;
+  inset:-25%;
   pointer-events:none;
+
   background:
-    radial-gradient(700px 500px at 30% 20%, rgba(120,160,255,.10), transparent 60%),
-    radial-gradient(650px 450px at 70% 30%, rgba(180,120,255,.08), transparent 65%),
-    radial-gradient(600px 420px at 50% 75%, rgba(80,255,220,.06), transparent 60%);
-  filter: blur(18px);
-  opacity:.55;
+    radial-gradient(1200px 900px at 20% 15%, rgba(120,160,255,.08), transparent 62%),
+    radial-gradient(1100px 800px at 80% 30%, rgba(180,120,255,.06), transparent 64%),
+    radial-gradient(1000px 750px at 55% 85%, rgba(80,255,220,.05), transparent 62%);
+
+  filter: blur(34px);
+  opacity:.38;
   transform: translateZ(0);
   animation: drift 18s ease-in-out infinite alternate;
-  mix-blend-mode: screen;
 }
 @keyframes drift{
   0%{ transform: translate3d(-2%, -1%, 0) scale(1.02); }
   100%{ transform: translate3d(2%, 1%, 0) scale(1.04); }
 }
 
-/* grain overlay */
+/* ---------------- GRAIN ---------------- */
 .grain{
-  position:fixed; inset:0;
+  position:fixed;
+  inset:0;
   pointer-events:none;
+
   background:
     radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.88) 100%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+
   mix-blend-mode: overlay;
   opacity:.22;
 }
 
-/* ---------- HERO ---------- */
+/* ---------------- HERO ---------------- */
 .hero{
   min-height:100vh;
   display:flex;
@@ -99,155 +98,138 @@ body::before{
 
 .mark{
   font-size: clamp(120px, 22vw, 270px);
-  line-height: 1;
-  letter-spacing: -0.03em;
+  line-height:1;
+  letter-spacing:-0.03em;
   transform: translateZ(0);
 
-  /* premium glow */
   text-shadow:
     0 0 10px rgba(120,160,255,.16),
     0 0 26px rgba(180,120,255,.10),
     0 0 52px rgba(120,160,255,.08);
 
-  /* subtle breathing */
   animation: breathe 6.5s ease-in-out infinite;
-  transition: filter 1.2s ease, text-shadow 1.8s ease;
 }
-
 @keyframes breathe{
-  0%,100%{ filter: brightness(1) saturate(1); }
-  50%{ filter: brightness(1.06) saturate(1.05); }
+  0%,100%{ filter:brightness(1); }
+  50%{ filter:brightness(1.06); }
 }
 
 .sub{
-  font-size: 13px;
-  letter-spacing: .18em;
-  text-transform: lowercase;
-  color: var(--muted);
-  opacity:.92;
+  font-size:13px;
+  letter-spacing:.18em;
+  text-transform:lowercase;
+  color:var(--muted);
 }
 
-/* guidance like a whisper */
 .hint{
-  margin-top: 14px;
-  font-size: 11px;
-  letter-spacing: .22em;
-  color: var(--ultrafaint);
-  opacity: .33;
+  margin-top:14px;
+  font-size:11px;
+  letter-spacing:.22em;
+  color:var(--ultrafaint);
+  opacity:.32;
 }
 
-/* ---------- LINES ---------- */
+/* ---------------- LINES ---------------- */
 .lines{
-  padding: 96px 16px 0;
-  max-width: 980px;
-  margin: 0 auto;
+  padding:96px 16px 0;
+  max-width:980px;
+  margin:0 auto;
 }
 
 .line{
-  margin: 0 auto;
-  padding: 34px 0;
+  margin:0 auto;
+  padding:34px 0;
   text-align:center;
-  font-size: clamp(18px, 2.2vw, 24px);
-  color: var(--muted);
+  font-size:clamp(18px, 2.2vw, 24px);
+  color:var(--muted);
 }
 
 .line.faint{
-  color: var(--faint);
-  font-size: 13px;
+  color:var(--faint);
+  font-size:13px;
   letter-spacing:.24em;
-  text-transform: lowercase;
+  text-transform:lowercase;
 }
 
 .bigq{
-  font-size: clamp(86px, 10vw, 170px);
-  color: var(--fg);
-  padding: 16px 0 0;
+  font-size:clamp(86px, 10vw, 170px);
+  padding-top:16px;
   text-shadow:
     0 0 18px rgba(120,160,255,.12),
     0 0 44px rgba(180,120,255,.08);
 }
 
-.gap{ height: 120px; }
+.gap{ height:120px; }
 
 .cursor{
-  width: 10px; height: 22px;
-  margin: 26px auto 0;
-  background: var(--ultrafaint);
-  animation: blink 1.1s steps(1,end) infinite;
+  width:10px;
+  height:22px;
+  margin:26px auto 0;
+  background:var(--ultrafaint);
+  animation:blink 1.1s steps(1,end) infinite;
 }
 @keyframes blink{ 50%{ opacity:0 } }
 
-/* ---------- TROLL PANEL (UPGRADED GLASS) ---------- */
+/* ---------------- TROLL PANEL ---------------- */
 .troll{
-  margin: 30px auto 56px; /* built-in spacing from troll → ask */
-  padding: 16px 16px;
-  max-width: 540px;
+  margin:30px auto 56px;
+  padding:16px;
+  max-width:540px;
 
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.11);
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.11);
 
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
   box-shadow:
-    0 14px 60px rgba(0,0,0,.50),
+    0 14px 60px rgba(0,0,0,.55),
     inset 0 1px 0 rgba(255,255,255,.06);
 
   backdrop-filter: blur(10px);
-  transform: translateZ(0);
 }
 
 .troll-row{
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  gap: 12px;
-  font-size: 12px;
-  letter-spacing: .20em;
-  text-transform: uppercase;
-  opacity: .92;
+  font-size:12px;
+  letter-spacing:.20em;
+  text-transform:uppercase;
+  opacity:.9;
 }
 
-.troll-label{ opacity: .60; }
-
-.troll-status{
-  font-weight: 700;
-  letter-spacing: .24em;
-  color: rgba(255,255,255,.90);
-}
+.troll-label{ opacity:.6; }
+.troll-status{ font-weight:700; letter-spacing:.24em; }
 
 .troll-combo{
-  margin: 12px 0 14px;
-  font-size: 28px;
-  letter-spacing: .10em;
-  font-variant-numeric: tabular-nums;
-  user-select: none;
-  opacity: .98;
+  margin:12px 0 14px;
+  font-size:28px;
+  letter-spacing:.10em;
+  font-variant-numeric:tabular-nums;
+  user-select:none;
   text-shadow:
     0 0 16px rgba(120,160,255,.10),
     0 0 22px rgba(180,120,255,.06);
 }
 
 .troll-ticker{
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .16em;
-  opacity: .85;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.16em;
 }
 
 .troll-sub{
-  margin-top: 10px;
-  font-size: 12px;
-  opacity: .52;
-  letter-spacing: .08em;
+  margin-top:10px;
+  font-size:12px;
+  opacity:.52;
+  letter-spacing:.08em;
 }
 
-/* ---------- ASK BAR (MORE LUX, STILL TERMINAL) ---------- */
+/* ---------------- ASK ---------------- */
 .ask{
-  margin: 0 auto;
-  max-width: 540px;
-  padding: 22px 18px;
+  margin:0 auto;
+  max-width:540px;
+  padding:22px 18px;
 
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.10);
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.10);
 
   background:
     radial-gradient(600px 180px at 50% 0%, rgba(120,160,255,.05), transparent 65%),
@@ -258,44 +240,39 @@ body::before{
     inset 0 1px 0 rgba(255,255,255,.05);
 
   backdrop-filter: blur(10px);
-  transform: translateZ(0);
-  transition: border-color .25s ease, background .25s ease, transform .25s ease;
+  transition: border-color .25s ease, transform .25s ease;
 }
 
-/* subtle focus ring without “form” vibes */
 .ask:focus-within{
   border-color: rgba(255,255,255,.16);
   transform: translateY(-1px);
 }
 
-/* input */
 .ask input{
   width:100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--fg);
-  font-size: 16px;
-  padding: 10px 6px;
-  letter-spacing: .04em;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:var(--fg);
+  font-size:16px;
+  padding:10px 6px;
+  letter-spacing:.04em;
 }
 
 .ask input::placeholder{
   color: rgba(255,255,255,.16);
   letter-spacing:.24em;
-  text-transform: lowercase;
+  text-transform:lowercase;
 }
 
 .response{
-  height: 44px;
+  height:44px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size: 34px;
-  letter-spacing: .08em;
-  color: var(--fg);
-
-  opacity: 0;
+  font-size:34px;
+  letter-spacing:.08em;
+  opacity:0;
   transform: translateY(6px);
   transition: opacity .22s ease, transform .22s ease;
 
@@ -308,47 +285,44 @@ body::before{
   transform: translateY(0);
 }
 
-/* slightly more end void */
-.endspace{ height: 320px; }
+.endspace{ height:320px; }
 
-/* ---------- REVEAL ---------- */
+/* ---------------- REVEAL ---------------- */
 .reveal{
   opacity:0;
   transform: translateY(10px);
   transition: opacity .8s ease, transform .8s ease;
-  will-change: opacity, transform;
 }
 .reveal.on{
   opacity:1;
-  transform: translateY(0);
+  transform:none;
 }
 
-/* ---------- GLITCH ---------- */
+/* ---------------- GLITCH ---------------- */
 body.glitch{
   animation: glitch .16s steps(2,end) 1;
 }
 @keyframes glitch{
-  0%{ filter:none; transform:none; }
-  20%{ filter: contrast(1.2) brightness(1.05); transform: translateX(-1px); }
-  40%{ filter: hue-rotate(6deg); transform: translateX(1px); }
-  60%{ filter: saturate(1.3); transform: translateX(-1px); }
-  80%{ filter:none; transform: translateX(1px); }
-  100%{ filter:none; transform:none; }
+  0%{ filter:none; }
+  20%{ filter:contrast(1.2) brightness(1.05); }
+  40%{ filter:hue-rotate(6deg); }
+  60%{ filter:saturate(1.3); }
+  100%{ filter:none; }
 }
 
-/* ---------- Reduced motion ---------- */
+/* ---------------- REDUCED MOTION ---------------- */
 @media (prefers-reduced-motion: reduce){
   html{ scroll-behavior:auto; }
   body::before{ animation:none; }
   .mark{ animation:none; }
-  .reveal{ transition:none; transform:none; opacity:1; }
+  .reveal{ transition:none; opacity:1; transform:none; }
   body.glitch{ animation:none; }
   .cursor{ animation:none; }
 }
 
-/* ---------- Mobile polish ---------- */
-@media (max-width: 640px){
-  .lines{ padding-top: 84px; }
-  .gap{ height: 104px; }
-  .troll{ margin-bottom: 60px; }
+/* ---------------- MOBILE ---------------- */
+@media (max-width:640px){
+  .lines{ padding-top:84px; }
+  .gap{ height:104px; }
+  .troll{ margin-bottom:60px; }
 }
