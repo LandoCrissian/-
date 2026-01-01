@@ -72,12 +72,22 @@ function glitchPulse() {
 }
 
 // default short response (2.5s)
-function showResponse(text = "?") {
+function showResponseFor(ms, text = "?", opts = {}) {
   if (!responseEl) return;
-  responseEl.textContent = text;
+
+  // style class for long text
+  responseEl.classList.toggle("long", !!opts.long);
+
+  // allow clickable link rendering
+  if (opts.html) responseEl.innerHTML = opts.html;
+  else responseEl.textContent = text;
+
   responseEl.classList.add("show");
-  clearTimeout(showResponse._t);
-  showResponse._t = setTimeout(() => responseEl.classList.remove("show"), 2500);
+  clearTimeout(showResponseFor._t);
+  showResponseFor._t = setTimeout(() => {
+    responseEl.classList.remove("show");
+    responseEl.classList.remove("long");
+  }, ms);
 }
 
 // long response (e.g. 60s)
@@ -175,10 +185,17 @@ if (askInput) {
 
       // Community/comms always wins (even in locked mode)
       if (communityHit) {
-        showResponseFor(60000, `COMMUNITY: ${FACTS.community}`);
-        busy = false;
-        return;
-      }
+  showResponseFor(
+    60000,
+    "",
+    {
+      long: true,
+      html: `COMMUNITY<br><a href="${FACTS.community}" target="_blank" rel="noopener noreferrer">${FACTS.community}</a>`
+    }
+  );
+  busy = false;
+  return;
+}
 
       // Normal answer mode (when enabled)
       if (maybeAnswer) {
