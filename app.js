@@ -213,3 +213,102 @@ askInput.addEventListener("blur", () => {
   if (focusTimer) clearTimeout(focusTimer);
   focusTimer = null;
 });
+
+(() => {
+  const comboEl = document.getElementById("trollCombo");
+  const solEl = document.getElementById("solTicker");
+  const subEl = document.getElementById("trollSub");
+  const statusEl = document.getElementById("lockStatus");
+
+  if (!comboEl || !solEl || !subEl || !statusEl) return;
+
+  // Non-interactive: make sure no input focus vibes
+  comboEl.style.pointerEvents = "none";
+  solEl.style.pointerEvents = "none";
+
+  const ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O to feel more "code"
+  const DIG = "0123456789";
+
+  // Build a combo like "A7KQ-19F3-ZP0X"
+  function randChar() {
+    return Math.random() < 0.55
+      ? ABC[(Math.random() * ABC.length) | 0]
+      : DIG[(Math.random() * DIG.length) | 0];
+  }
+
+  function randBlock(n) {
+    let s = "";
+    for (let i = 0; i < n; i++) s += randChar();
+    return s;
+  }
+
+  let combo = `${randBlock(4)}-${randBlock(4)}-${randBlock(4)}`;
+  comboEl.textContent = combo;
+
+  // "Brute force" effect: mutate a couple chars rapidly
+  const mutate = () => {
+    const chars = combo.split("");
+    // mutate 2-4 positions, avoid hyphens
+    const mutations = 2 + ((Math.random() * 3) | 0);
+    for (let k = 0; k < mutations; k++) {
+      let idx = (Math.random() * chars.length) | 0;
+      if (chars[idx] === "-") idx = (idx + 1) % chars.length;
+      chars[idx] = randChar();
+    }
+    combo = chars.join("");
+    comboEl.textContent = combo;
+  };
+
+  // Every few seconds, "fail" and reset like a system cycling
+  const failCycle = () => {
+    const msgs = [
+      "attempting…",
+      "timing window missed",
+      "checksum mismatch",
+      "access denied",
+      "rotating keys…",
+      "re-seeding…",
+      "rate limit engaged",
+      "invalid phrase",
+      "still early"
+    ];
+    subEl.textContent = msgs[(Math.random() * msgs.length) | 0];
+
+    // flicker LOCKED a bit
+    statusEl.textContent = "LOCKED";
+  };
+
+  // SOL ticker always flipping ????
+  // (Optional: you can make it *almost* show numbers, then censor)
+  const tickSol = () => {
+    const style = Math.random();
+    if (style < 0.7) {
+      solEl.textContent = "????";
+    } else if (style < 0.9) {
+      solEl.textContent = "? ? ? ?";
+    } else {
+      // tease: "12?.??" then blank
+      const tease = `${(10 + ((Math.random() * 90) | 0))}?.??`;
+      solEl.textContent = tease;
+      setTimeout(() => (solEl.textContent = "????"), 180);
+    }
+  };
+
+  // Start loops
+  const comboTimer = setInterval(mutate, 90);     // rapid brute-force
+  const cycleTimer = setInterval(failCycle, 2400); // system messages
+  const solTimer = setInterval(tickSol, 160);     // flip ticker fast
+
+  // Initial call
+  failCycle();
+  tickSol();
+
+  // Safety: stop animating if tab is hidden
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearInterval(comboTimer);
+      clearInterval(cycleTimer);
+      clearInterval(solTimer);
+    }
+  }, { once: true });
+})();
