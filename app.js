@@ -22,10 +22,18 @@ const FACTS = {
 };
 
 // ------------------------------
-// COMMUNITY MATCH (works even in locked mode)
+// COMMUNITY MATCH (strong)
+// - triggers on keywords OR if they paste the link
 // ------------------------------
-const COMMUNITY_MATCH =
-  /\b(community|comms|chat|talk|where.*talk|join|x community|twitter community|group|hub|members|updates|announcements)\b/i;
+const COMMUNITY_MATCH = /\b(community|comms|chat|talk|join|group|hub|members|updates|announcements)\b/i;
+function isCommunityHit(text) {
+  const t = (text || "").toLowerCase();
+  if (!t) return false;
+  if (COMMUNITY_MATCH.test(t)) return true;
+  if (t.includes("x.com/i/communities/")) return true;
+  if (t.includes("communities/2006505348979687806")) return true;
+  return false;
+}
 
 // ------------------------------
 // ANSWER MAP (only used when ANSWER_MODE = true)
@@ -41,13 +49,10 @@ const ANSWERS = [
 // EGG CONFIG (private knobs)
 // ------------------------------
 const TIME_GATE = { hour: 3, minute: 33, windowSeconds: 60 };
-
 const RARE_THINK_CHANCE = 0.05;
 const VERY_RARE_SILENT_CHANCE = 0.01;
-
 const MICRO_MOVE_CHANCE = 0.22;
 const MICRO_MOVE_PX = 2;
-
 const DEVTOOLS_WHISPER = "// you’re paying attention";
 
 // ------------------------------
@@ -71,19 +76,18 @@ function glitchPulse() {
   setTimeout(() => document.body.classList.remove("glitch"), 170);
 }
 
-// short response (2.5s)
-function showResponse(text = "?", opts = {}) {
-  showResponseFor(2500, text, opts);
+function clearResponseModes() {
+  responseEl.classList.remove("show", "linkmode", "long");
+  responseEl.textContent = "";
 }
 
-// long response (custom)
 function showResponseFor(ms, text = "?", opts = {}) {
   if (!responseEl) return;
 
-  // style mode for link CTA
+  // reset modes
   responseEl.classList.toggle("linkmode", !!opts.linkmode);
+  responseEl.classList.toggle("long", !!opts.long);
 
-  // allow html
   if (opts.html) responseEl.innerHTML = opts.html;
   else responseEl.textContent = text;
 
@@ -91,9 +95,12 @@ function showResponseFor(ms, text = "?", opts = {}) {
 
   clearTimeout(showResponseFor._t);
   showResponseFor._t = setTimeout(() => {
-    responseEl.classList.remove("show");
-    responseEl.classList.remove("linkmode");
+    clearResponseModes();
   }, ms);
+}
+
+function showResponse(text = "?", opts = {}) {
+  showResponseFor(2500, text, opts);
 }
 
 function resolveAnswer(userText) {
@@ -156,7 +163,7 @@ if (askInput) {
     const userText = (askInput.value || "").trim();
     askInput.value = "";
 
-    const communityHit = COMMUNITY_MATCH.test(userText) && !!FACTS.community;
+    const communityHit = isCommunityHit(userText) && !!FACTS.community;
     const maybeAnswer = resolveAnswer(userText);
 
     // BASE delay feels like "thinking"
@@ -180,14 +187,14 @@ if (askInput) {
         return;
       }
 
-      // Community/comms always wins (even in locked mode)
+      // COMMUNITY CTA (fixed: compact, inside ask box)
       if (communityHit) {
-        showResponseFor(60000, "", {
+        showResponseFor(25000, "", {
           linkmode: true,
           html: `
-            COMMUNITY ACCESS<br>
+            COMMUNITY<br>
             <a href="${FACTS.community}" target="_blank" rel="noopener noreferrer">
-              Tap to join →
+              join →
             </a>
           `
         });
@@ -197,7 +204,9 @@ if (askInput) {
 
       // Normal answer mode (when enabled)
       if (maybeAnswer) {
-        showResponse(maybeAnswer);
+        // auto-scale if long
+        const long = maybeAnswer.length > 24;
+        showResponseFor(6000, maybeAnswer, { long });
         busy = false;
         return;
       }
