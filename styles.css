@@ -350,3 +350,29 @@ body.glitch{
   text-decoration: none;
   border-bottom: 1px solid rgba(255,255,255,.18);
 }
+
+/* Professional community CTA mode */
+.response.linkmode{
+  height: auto;                  /* allow 2 lines */
+  flex-direction: column;
+  gap: 10px;
+
+  font-size: 13px;
+  letter-spacing: .18em;
+  line-height: 1.35;
+  text-transform: uppercase;
+
+  padding: 10px 10px;
+}
+
+.response.linkmode a{
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.04);
+  text-decoration: none;
+  color: rgba(255,255,255,.92);
+  letter-spacing: .08em;
+  text-transform: none;
+}
