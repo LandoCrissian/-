@@ -265,24 +265,73 @@ body::before{
   text-transform:lowercase;
 }
 
+/* ---------------- RESPONSE (FIXED) ---------------- */
+/* Key fix: no fixed height + wraps cleanly + scales for modes */
 .response{
-  height:44px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:34px;
-  letter-spacing:.08em;
+  display:block;
+  width:100%;
+  margin-top:10px;
+
+  /* no fixed height */
+  min-height: 0;
+
+  text-align:center;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
   opacity:0;
   transform: translateY(6px);
   transition: opacity .22s ease, transform .22s ease;
+
+  font-size:34px;
+  letter-spacing:.08em;
+  line-height:1.15;
 
   text-shadow:
     0 0 18px rgba(120,160,255,.16),
     0 0 34px rgba(180,120,255,.10);
 }
+
 .response.show{
   opacity:1;
   transform: translateY(0);
+}
+
+/* When response is long, auto-scale */
+.response.long{
+  font-size:16px;
+  letter-spacing:.02em;
+  opacity:.95;
+}
+
+/* Link/CTA mode: becomes a compact card */
+.response.linkmode{
+  font-size:13px;
+  letter-spacing:.18em;
+  line-height:1.35;
+  text-transform:uppercase;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.02);
+}
+
+.response.linkmode a{
+  display:inline-block;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.04);
+  text-decoration:none;
+  color: rgba(255,255,255,.92);
+  letter-spacing:.08em;
+  text-transform:none;
 }
 
 .endspace{ height:320px; }
@@ -327,52 +376,4 @@ body.glitch{
   .troll{ margin-bottom:60px; }
 }
 
-/* Make long responses (like links) behave on mobile */
-.response{
-  max-width: 100%;
-  padding: 6px 8px;
-  text-align: center;
-  word-break: break-word;      /* break long URLs */
-  overflow-wrap: anywhere;     /* modern wrap */
-  line-height: 1.15;
-}
-
-/* Auto-scale when response is long */
-.response.long{
-  font-size: 16px;             /* down from 34px */
-  letter-spacing: .02em;
-  opacity: .95;
-}
-
-/* Optional: make it look like a "link chip" */
-.response a{
-  color: rgba(255,255,255,.92);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255,255,255,.18);
-}
-
-/* Professional community CTA mode */
-.response.linkmode{
-  height: auto;                  /* allow 2 lines */
-  flex-direction: column;
-  gap: 10px;
-
-  font-size: 13px;
-  letter-spacing: .18em;
-  line-height: 1.35;
-  text-transform: uppercase;
-
-  padding: 10px 10px;
-}
-
-.response.linkmode a{
-  display: inline-block;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.04);
-  text-decoration: none;
-  color: rgba(255,255,255,.92);
-  letter-spacing: .08em;
-  text-transform: none;
-}
+/* ? */
