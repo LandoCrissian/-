@@ -71,32 +71,29 @@ function glitchPulse() {
   setTimeout(() => document.body.classList.remove("glitch"), 170);
 }
 
-// default short response (2.5s)
+// short response (2.5s)
+function showResponse(text = "?", opts = {}) {
+  showResponseFor(2500, text, opts);
+}
+
+// long response (custom)
 function showResponseFor(ms, text = "?", opts = {}) {
   if (!responseEl) return;
 
-  // style class for long text
-  responseEl.classList.toggle("long", !!opts.long);
+  // style mode for link CTA
+  responseEl.classList.toggle("linkmode", !!opts.linkmode);
 
-  // allow clickable link rendering
+  // allow html
   if (opts.html) responseEl.innerHTML = opts.html;
   else responseEl.textContent = text;
 
   responseEl.classList.add("show");
+
   clearTimeout(showResponseFor._t);
   showResponseFor._t = setTimeout(() => {
     responseEl.classList.remove("show");
-    responseEl.classList.remove("long");
+    responseEl.classList.remove("linkmode");
   }, ms);
-}
-
-// long response (e.g. 60s)
-function showResponseFor(ms, text = "?") {
-  if (!responseEl) return;
-  responseEl.textContent = text;
-  responseEl.classList.add("show");
-  clearTimeout(showResponseFor._t);
-  showResponseFor._t = setTimeout(() => responseEl.classList.remove("show"), ms);
 }
 
 function resolveAnswer(userText) {
@@ -185,17 +182,18 @@ if (askInput) {
 
       // Community/comms always wins (even in locked mode)
       if (communityHit) {
-  showResponseFor(
-    60000,
-    "",
-    {
-      long: true,
-      html: `COMMUNITY<br><a href="${FACTS.community}" target="_blank" rel="noopener noreferrer">${FACTS.community}</a>`
-    }
-  );
-  busy = false;
-  return;
-}
+        showResponseFor(60000, "", {
+          linkmode: true,
+          html: `
+            COMMUNITY ACCESS<br>
+            <a href="${FACTS.community}" target="_blank" rel="noopener noreferrer">
+              Tap to join →
+            </a>
+          `
+        });
+        busy = false;
+        return;
+      }
 
       // Normal answer mode (when enabled)
       if (maybeAnswer) {
