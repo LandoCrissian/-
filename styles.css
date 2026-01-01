@@ -326,3 +326,27 @@ body.glitch{
   .gap{ height:104px; }
   .troll{ margin-bottom:60px; }
 }
+
+/* Make long responses (like links) behave on mobile */
+.response{
+  max-width: 100%;
+  padding: 6px 8px;
+  text-align: center;
+  word-break: break-word;      /* break long URLs */
+  overflow-wrap: anywhere;     /* modern wrap */
+  line-height: 1.15;
+}
+
+/* Auto-scale when response is long */
+.response.long{
+  font-size: 16px;             /* down from 34px */
+  letter-spacing: .02em;
+  opacity: .95;
+}
+
+/* Optional: make it look like a "link chip" */
+.response a{
+  color: rgba(255,255,255,.92);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.18);
+}
