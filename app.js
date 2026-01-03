@@ -1,3 +1,4 @@
+// app.js
 // Small, deliberate. No analytics. No storage.
 console.log("?");
 
@@ -25,69 +26,6 @@ const trollSubEl = document.getElementById("trollSub");
 const lockStatusEl = document.getElementById("lockStatus");
 
 // ------------------------------
-// LINK: VAULT -> TOP PANEL (UNLOCK)
-// ------------------------------
-let topOverrideTimer = null;
-let topSubOverrideTimer = null;
-
-function setTopSub(text, ms = 1400) {
-  if (!trollSubEl) return;
-  const prev = trollSubEl.textContent;
-
-  clearTimeout(topSubOverrideTimer);
-  trollSubEl.textContent = text;
-
-  topSubOverrideTimer = setTimeout(() => {
-    trollSubEl.textContent = prev;
-  }, ms);
-}
-
-function flashTopComboFromAttempt(attemptDigits) {
-  if (!comboEl) return;
-
-  // Convert 10 digits into a "key-like" triplet: 4-4-2 padded to 4
-  // Example: 1234567890 -> 1234-5678-90Q?
-  const a = attemptDigits.slice(0, 4);
-  const b = attemptDigits.slice(4, 8);
-  const c = attemptDigits.slice(8, 10);
-
-  // add 2 chars to make it feel like the existing 4-char block
-  const pad = "??";
-  const temp = `${a}-${b}-${c}${pad}`;
-
-  const prev = comboEl.textContent;
-  clearTimeout(topOverrideTimer);
-
-  // show "sync" combo
-  comboEl.textContent = temp;
-
-  // subtle status flicker
-  if (lockStatusEl) lockStatusEl.textContent = "LOCKED";
-
-  topOverrideTimer = setTimeout(() => {
-    comboEl.textContent = prev; // returns to mutated stream
-  }, 1600);
-}
-
-function burstSolLeak(ms = 1200) {
-  // temporarily increase chance of number flash after a vault attempt
-  if (!SOL_LEAK || !SOL_LEAK.enabled) return;
-
-  const prev = {
-    flashChance: SOL_LEAK.flashChance,
-    flashMs: SOL_LEAK.flashMs
-  };
-
-  SOL_LEAK.flashChance = 0.75; // big leak
-  SOL_LEAK.flashMs = 300;
-
-  setTimeout(() => {
-    SOL_LEAK.flashChance = prev.flashChance;
-    SOL_LEAK.flashMs = prev.flashMs;
-  }, ms);
-}
-
-// ------------------------------
 // LOCKED MODE (v1 freeze)
 // ------------------------------
 const ANSWER_MODE = false;
@@ -105,7 +43,8 @@ const FACTS = {
 // ------------------------------
 // COMMUNITY MATCH (strong)
 // ------------------------------
-const COMMUNITY_MATCH = /\b(community|comms|chat|talk|join|group|hub|members|updates|announcements)\b/i;
+const COMMUNITY_MATCH =
+  /\b(community|comms|chat|talk|join|group|hub|members|updates|announcements)\b/i;
 
 function isCommunityHit(text) {
   const t = (text || "").toLowerCase();
@@ -122,7 +61,11 @@ function isCommunityHit(text) {
 const VAULT = {
   enabled: true,
   digits: 10,
+
+  // Keep false until real prize logic exists server-side.
   unlockEnabled: false,
+
+  // Never ship a meaningful real code in client JS.
   unlockCode: "0000000000"
 };
 
@@ -214,7 +157,7 @@ function resolveAnswer(userText) {
   for (const a of ANSWERS) {
     if (a.match.test(t)) {
       const out = a.text();
-      return (out && out.trim()) ? out : "?";
+      return out && out.trim() ? out : "?";
     }
   }
   return null;
@@ -229,8 +172,10 @@ function setVaultSub(text) {
 
 function showVaultResult(text) {
   if (!vaultResultEl) return;
+
   vaultResultEl.textContent = text;
   vaultResultEl.classList.add("show");
+
   clearTimeout(showVaultResult._t);
   showVaultResult._t = setTimeout(() => {
     vaultResultEl.classList.remove("show");
@@ -249,6 +194,63 @@ function parseVaultAttempt(text) {
   return digitsOnly;
 }
 
+// ------------------------------
+// LINK: VAULT -> TOP PANEL (HARD SYNC)
+// (prevents "autopilot overwrite" during vault checks)
+// ------------------------------
+const TOP_LINK = {
+  comboLockUntil: 0,
+  subLockUntil: 0
+};
+
+function lockTopCombo(ms = 1800) {
+  TOP_LINK.comboLockUntil = Date.now() + ms;
+}
+
+function lockTopSub(ms = 1800) {
+  TOP_LINK.subLockUntil = Date.now() + ms;
+}
+
+function setTopSub(text, ms = 1400) {
+  if (!trollSubEl) return;
+  lockTopSub(ms);
+  trollSubEl.textContent = text;
+}
+
+function flashTopComboFromAttempt(attemptDigits, ms = 1800) {
+  if (!comboEl) return;
+
+  // 10 digits -> 4-4-2?? (feels like 4-4-4)
+  const a = attemptDigits.slice(0, 4);
+  const b = attemptDigits.slice(4, 8);
+  const c = attemptDigits.slice(8, 10);
+
+  const temp = `${a}-${b}-${c}??`;
+
+  lockTopCombo(ms);
+  comboEl.textContent = temp;
+
+  if (lockStatusEl) lockStatusEl.textContent = "LOCKED";
+}
+
+function burstSolLeak(ms = 1200) {
+  if (!SOL_LEAK || !SOL_LEAK.enabled) return;
+
+  const prevChance = SOL_LEAK.flashChance;
+  const prevMs = SOL_LEAK.flashMs;
+
+  SOL_LEAK.flashChance = 0.75;
+  SOL_LEAK.flashMs = 300;
+
+  setTimeout(() => {
+    SOL_LEAK.flashChance = prevChance;
+    SOL_LEAK.flashMs = prevMs;
+  }, ms);
+}
+
+// ------------------------------
+// Vault behavior (separate from ask)
+// ------------------------------
 let vaultBusy = false;
 
 function handleVaultTry() {
@@ -256,6 +258,7 @@ function handleVaultTry() {
   if (vaultBusy) return;
 
   const attempt = parseVaultAttempt(vaultInputEl ? vaultInputEl.value : "");
+
   if (!attempt) {
     glitchPulse();
     setVaultSub("need 10 digits");
@@ -265,10 +268,10 @@ function handleVaultTry() {
 
   vaultBusy = true;
 
-  // >>> NEW: make the TOP PANEL react (no more autopilot feel)
-  setTopSub("verifying…");
-  flashTopComboFromAttempt(attempt);
-  burstSolLeak(1200);
+  // Make TOP PANEL react and HOLD (no autopilot overwrite)
+  setTopSub("verifying…", 2200);
+  flashTopComboFromAttempt(attempt, 2200);
+  burstSolLeak(1400);
 
   setVaultSub("checking…");
   if (vaultStatusEl) vaultStatusEl.textContent = "LOCKED";
@@ -285,8 +288,8 @@ function handleVaultTry() {
       setVaultSub("…");
       showVaultResult("UNLOCKED");
 
-      // >>> NEW: top panel reacts to success too
-      setTopSub("access granted", 2000);
+      // Top reacts to success too
+      setTopSub("access granted", 2400);
       if (lockStatusEl) lockStatusEl.textContent = "UNLOCKED";
 
       vaultBusy = false;
@@ -294,11 +297,12 @@ function handleVaultTry() {
     }
 
     const masked = attempt.slice(0, 2) + "????????" + attempt.slice(-2);
+
     setVaultSub("timing window missed");
     showVaultResult(masked);
 
-    // >>> NEW: top panel reacts to failure
-    setTopSub("checksum mismatch", 1600);
+    // Top reacts to failure
+    setTopSub("checksum mismatch", 2000);
 
     vaultBusy = false;
   }, delay);
@@ -308,11 +312,14 @@ function handleVaultTry() {
 // Reveal on scroll
 // ------------------------------
 if (reveals && reveals.length) {
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) if (e.isIntersecting) e.target.classList.add("on");
-  }, { threshold: 0.15 });
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) if (e.isIntersecting) e.target.classList.add("on");
+    },
+    { threshold: 0.15 }
+  );
 
-  reveals.forEach(el => io.observe(el));
+  reveals.forEach((el) => io.observe(el));
 }
 
 // ------------------------------
@@ -331,7 +338,9 @@ if (reveals && reveals.length) {
 // EGG: DevTools whisper
 // ------------------------------
 (function devtoolsWhisper() {
-  try { console.log(DEVTOOLS_WHISPER); } catch (_) {}
+  try {
+    console.log(DEVTOOLS_WHISPER);
+  } catch (_) {}
 })();
 
 // ------------------------------
@@ -340,7 +349,7 @@ if (reveals && reveals.length) {
 let askBusy = false;
 
 if (askInput) {
-  // IMPORTANT: keep Ask as text (fixes your iOS keypad issue)
+  // Force Ask as TEXT (prevents iOS numeric keyboard weirdness)
   askInput.setAttribute("type", "text");
   askInput.setAttribute("inputmode", "text");
   askInput.setAttribute("pattern", "");
@@ -416,8 +425,14 @@ if (askInput) {
 // VAULT events (separate from ask)
 // ------------------------------
 if (vaultInputEl) {
+  // digits only, max 10
+  vaultInputEl.setAttribute("type", "text");
+  vaultInputEl.setAttribute("inputmode", "numeric");
+  vaultInputEl.setAttribute("autocomplete", "off");
+  vaultInputEl.setAttribute("autocapitalize", "off");
+  vaultInputEl.setAttribute("spellcheck", "false");
+
   vaultInputEl.addEventListener("input", () => {
-    // digits only, max 10
     vaultInputEl.value = vaultInputEl.value.replace(/\D/g, "").slice(0, VAULT.digits);
   });
 
@@ -481,13 +496,18 @@ if (askInput) {
   comboEl.textContent = combo;
 
   const mutate = () => {
+    // ✅ If vault is syncing, DO NOT overwrite combo
+    if (Date.now() < TOP_LINK.comboLockUntil) return;
+
     const chars = combo.split("");
     const mutations = 2 + ((Math.random() * 3) | 0);
+
     for (let k = 0; k < mutations; k++) {
       let idx = (Math.random() * chars.length) | 0;
       if (chars[idx] === "-") idx = (idx + 1) % chars.length;
       chars[idx] = randChar();
     }
+
     combo = chars.join("");
     comboEl.textContent = combo;
   };
@@ -505,6 +525,9 @@ if (askInput) {
   ];
 
   const failCycle = () => {
+    // ✅ If vault is syncing, DO NOT overwrite subtext
+    if (Date.now() < TOP_LINK.subLockUntil) return;
+
     trollSubEl.textContent = msgs[(Math.random() * msgs.length) | 0];
     lockStatusEl.textContent = "LOCKED";
   };
@@ -539,7 +562,9 @@ if (askInput) {
     solEl.textContent = "????";
   };
 
-  let comboTimer = null, cycleTimer = null, solTimer = null;
+  let comboTimer = null,
+    cycleTimer = null,
+    solTimer = null;
 
   function start() {
     if (comboTimer) return;
