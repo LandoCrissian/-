@@ -36,6 +36,35 @@ function isCommunityHit(text) {
 }
 
 // ------------------------------
+// NUMERIC / VAULT CONFIG (new)
+// ------------------------------
+// Accept 10-digit entries. Still locked for now.
+const VAULT = {
+  enabled: true,
+  digits: 10,
+
+  // Keep false until you truly go live with real prize logic.
+  // When false: always "LOCKED" (but feels real).
+  unlockEnabled: false,
+
+  // Optional: when unlockEnabled = true, set the real code here.
+  // (Do NOT ship the real code in client JS when the pot is meaningful.)
+  unlockCode: "0000000000"
+};
+
+// Leak numbers more often without fully committing to transparency yet.
+const SOL_LEAK = {
+  enabled: true,
+  // Probability per tick to show a number flash
+  flashChance: 0.18,     // 18% flashes (rest stays ?)
+  // How long a flash stays visible (ms)
+  flashMs: 240,
+  // Range for tease numbers (display only)
+  min: 0.00,
+  max: 99.99
+};
+
+// ------------------------------
 // ANSWER MAP (only used when ANSWER_MODE = true)
 // ------------------------------
 const ANSWERS = [
@@ -62,6 +91,10 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+
 function inTimeGateUTC() {
   const now = new Date();
   const h = now.getUTCHours();
@@ -77,6 +110,7 @@ function glitchPulse() {
 }
 
 function clearResponseModes() {
+  if (!responseEl) return;
   responseEl.classList.remove("show", "linkmode", "long");
   responseEl.textContent = "";
 }
@@ -84,7 +118,6 @@ function clearResponseModes() {
 function showResponseFor(ms, text = "?", opts = {}) {
   if (!responseEl) return;
 
-  // reset modes
   responseEl.classList.toggle("linkmode", !!opts.linkmode);
   responseEl.classList.toggle("long", !!opts.long);
 
@@ -115,6 +148,19 @@ function resolveAnswer(userText) {
     }
   }
   return null;
+}
+
+// NEW: detect numeric attempt
+function parseVaultAttempt(text) {
+  if (!VAULT.enabled) return null;
+  const raw = (text || "").trim();
+  if (!raw) return null;
+
+  // keep only digits
+  const digitsOnly = raw.replace(/\D/g, "");
+  if (digitsOnly.length !== VAULT.digits) return null;
+
+  return digitsOnly;
 }
 
 // ------------------------------
@@ -166,6 +212,9 @@ if (askInput) {
     const communityHit = isCommunityHit(userText) && !!FACTS.community;
     const maybeAnswer = resolveAnswer(userText);
 
+    // NEW: numeric vault attempt
+    const vaultAttempt = parseVaultAttempt(userText);
+
     // BASE delay feels like "thinking"
     let delay = 360 + Math.floor(Math.random() * 220);
 
@@ -178,6 +227,9 @@ if (askInput) {
     // Community should respond quickly + deliberate
     if (communityHit) delay = 420;
 
+    // Vault attempt should feel serious + deliberate
+    if (vaultAttempt) delay = 780 + Math.floor(Math.random() * 520);
+
     // Answers should feel deliberate (slower, no glitch)
     if (maybeAnswer) delay = 900 + Math.floor(Math.random() * 450);
 
@@ -187,7 +239,7 @@ if (askInput) {
         return;
       }
 
-      // COMMUNITY CTA (fixed: compact, inside ask box)
+      // COMMUNITY CTA (compact, inside ask box)
       if (communityHit) {
         showResponseFor(25000, "", {
           linkmode: true,
@@ -202,9 +254,33 @@ if (askInput) {
         return;
       }
 
+      // NEW: VAULT ATTEMPT FLOW
+      if (vaultAttempt) {
+        // micro “checking” pulse (no words required)
+        glitchPulse();
+
+        // If you ever enable unlock: verify here
+        if (VAULT.unlockEnabled && vaultAttempt === VAULT.unlockCode) {
+          // Keep this subtle. You can change later.
+          showResponseFor(9000, "UNLOCKED", { long: true });
+          busy = false;
+          return;
+        }
+
+        // Default locked response (feels like a real attempt happened)
+        // Shows their attempt masked — numbers exist, but still denies certainty.
+        const masked =
+          vaultAttempt.slice(0, 2) +
+          "????????" +
+          vaultAttempt.slice(-2);
+
+        showResponseFor(9000, masked, { long: true });
+        busy = false;
+        return;
+      }
+
       // Normal answer mode (when enabled)
       if (maybeAnswer) {
-        // auto-scale if long
         const long = maybeAnswer.length > 24;
         showResponseFor(6000, maybeAnswer, { long });
         busy = false;
@@ -304,15 +380,40 @@ if (askInput) {
     statusEl.textContent = "LOCKED";
   };
 
+  // NEW: ticker leaks numbers more often, but still mostly ?
+  const fmt = (n) => n.toFixed(2);
+
   const tickSol = () => {
-    const r = Math.random();
-    if (r < 0.7) solEl.textContent = "????";
-    else if (r < 0.9) solEl.textContent = "? ? ? ?";
-    else {
-      const tease = `${(10 + ((Math.random() * 90) | 0))}?.??`;
-      solEl.textContent = tease;
-      setTimeout(() => (solEl.textContent = "????"), 180);
+    if (!SOL_LEAK.enabled) {
+      solEl.textContent = "????";
+      return;
     }
+
+    // Mostly obscured
+    const r = Math.random();
+
+    // 55%: pure "????"
+    if (r < 0.55) {
+      solEl.textContent = "????";
+      return;
+    }
+
+    // 27%: spaced tease "? ? ? ?"
+    if (r < 0.82) {
+      solEl.textContent = "? ? ? ?";
+      return;
+    }
+
+    // 18%: flash real-ish number briefly
+    if (Math.random() < SOL_LEAK.flashChance) {
+      const val = SOL_LEAK.min + Math.random() * (SOL_LEAK.max - SOL_LEAK.min);
+      solEl.textContent = fmt(val);
+      setTimeout(() => (solEl.textContent = "????"), SOL_LEAK.flashMs);
+      return;
+    }
+
+    // fallback
+    solEl.textContent = "????";
   };
 
   let comboTimer = null, cycleTimer = null, solTimer = null;
@@ -321,7 +422,7 @@ if (askInput) {
     if (comboTimer) return;
     comboTimer = setInterval(mutate, 90);
     cycleTimer = setInterval(failCycle, 2400);
-    solTimer = setInterval(tickSol, 160);
+    solTimer = setInterval(tickSol, 180);
     failCycle();
     tickSol();
   }
