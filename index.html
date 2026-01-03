@@ -83,30 +83,31 @@
   <div class="troll-sub" id="trollSub">attempting…</div>
 </div>
 
-      <div class="vault reveal" id="vault">
+      <!-- VAULT PANEL (interactive) -->
+<div class="vault reveal" id="vault">
   <div class="vault-row">
-    <span class="vault-label">vault</span>
-    <span class="vault-status">ENTER 10 DIGITS</span>
+    <span class="vault-left">VAULT · ENTER 10 DIGITS</span>
+    <span class="vault-right" id="vaultStatus">LOCKED</span>
   </div>
 
-  <div class="vault-inputwrap">
+  <div class="vault-inputrow">
     <input
       id="vaultInput"
-      type="text"
+      type="tel"
       inputmode="numeric"
       pattern="[0-9]*"
       autocomplete="off"
-      autocapitalize="off"
       spellcheck="false"
-      maxlength="10"
       placeholder="??????????"
-      aria-label="Enter 10-digit code"
+      aria-label="Enter 10 digits"
     />
-    <button id="vaultBtn" type="button">TRY</button>
+    <button id="vaultBtn" type="button" aria-label="Try code">TRY</button>
   </div>
 
-  <div class="vault-sub" id="vaultSub">?</div>
+  <div class="vault-sub" id="vaultSub">timing window missed</div>
+  <div class="vault-result" id="vaultResult" aria-live="polite"></div>
 </div>
+
 
       <div class="ask reveal" id="ask">
         <label class="sr" for="askInput">Ask</label>
