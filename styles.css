@@ -376,16 +376,16 @@ body.glitch{
   .troll{ margin-bottom:60px; }
 }
 
-/* ---------------- VAULT (NEW) ---------------- */
+/* ---------------- VAULT ---------------- */
 .vault{
-  margin: 0 auto 18px;
-  padding: 16px;
+  margin: 0 auto 26px;
   max-width: 540px;
+  padding: 16px;
 
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.11);
 
-  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.016));
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
   box-shadow:
     0 14px 60px rgba(0,0,0,.55),
     inset 0 1px 0 rgba(255,255,255,.06);
@@ -396,48 +396,54 @@ body.glitch{
 .vault-row{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   font-size:12px;
   letter-spacing:.20em;
   text-transform:uppercase;
   opacity:.9;
 }
 
-.vault-label{ opacity:.6; }
-.vault-status{ font-weight:700; letter-spacing:.18em; }
+.vault-left{ opacity:.75; }
+.vault-right{ font-weight:700; letter-spacing:.24em; }
 
-.vault-inputwrap{
+.vault-inputrow{
+  margin-top: 12px;
   display:flex;
-  gap:10px;
-  margin-top:12px;
+  gap: 12px;
+  align-items:center;
 }
 
 #vaultInput{
-  flex:1;
+  flex: 1;
   background: rgba(0,0,0,.25);
-  border:1px solid rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.10);
   border-radius: 14px;
-  outline:none;
-  color: rgba(255,255,255,.92);
 
-  padding: 12px 12px;
+  padding: 14px 14px;
+  color: rgba(255,255,255,.95);
   font-size: 16px;
-  letter-spacing: .24em;
+  letter-spacing: .22em;
   text-align: center;
+
+  outline: none;
 }
 
 #vaultInput::placeholder{
   color: rgba(255,255,255,.18);
-  letter-spacing: .28em;
+  letter-spacing: .24em;
 }
 
 #vaultBtn{
-  width: 88px;
+  width: 72px;
+  height: 46px;
+
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.04);
   color: rgba(255,255,255,.92);
-  font-size: 12px;
+
   letter-spacing: .18em;
+  font-size: 12px;
   text-transform: uppercase;
 }
 
@@ -448,9 +454,26 @@ body.glitch{
 .vault-sub{
   margin-top: 10px;
   font-size: 12px;
-  opacity: .55;
+  opacity: .52;
   letter-spacing: .08em;
+}
+
+.vault-result{
+  margin-top: 10px;
   text-align:center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .22em;
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .22s ease, transform .22s ease;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.vault-result.show{
+  opacity: .95;
+  transform: translateY(0);
 }
 
 /* ? */
