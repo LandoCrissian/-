@@ -5,14 +5,24 @@ console.log("?");
 // DOM
 // ------------------------------
 const reveals = document.querySelectorAll(".reveal");
+
+// ASK (stays text)
 const responseEl = document.getElementById("response");
 const askInput = document.getElementById("askInput");
 const markEl = document.getElementById("mark");
 
-// OPTIONAL (Option B): dedicated vault panel elements
+// VAULT (fully separate)
 const vaultInputEl = document.getElementById("vaultInput");
 const vaultBtnEl = document.getElementById("vaultBtn");
 const vaultSubEl = document.getElementById("vaultSub");
+const vaultResultEl = document.getElementById("vaultResult");
+const vaultStatusEl = document.getElementById("vaultStatus");
+
+// TROLL PANEL
+const comboEl = document.getElementById("trollCombo");
+const solEl = document.getElementById("solTicker");
+const trollSubEl = document.getElementById("trollSub");
+const lockStatusEl = document.getElementById("lockStatus");
 
 // ------------------------------
 // LOCKED MODE (v1 freeze)
@@ -20,7 +30,7 @@ const vaultSubEl = document.getElementById("vaultSub");
 const ANSWER_MODE = false;
 
 // ------------------------------
-// LAUNCH FACTS (fill later, keep empty now)
+// LAUNCH FACTS
 // ------------------------------
 const FACTS = {
   ca: "",
@@ -31,7 +41,6 @@ const FACTS = {
 
 // ------------------------------
 // COMMUNITY MATCH (strong)
-// - triggers on keywords OR if they paste the link
 // ------------------------------
 const COMMUNITY_MATCH = /\b(community|comms|chat|talk|join|group|hub|members|updates|announcements)\b/i;
 
@@ -45,22 +54,18 @@ function isCommunityHit(text) {
 }
 
 // ------------------------------
-// NUMERIC / VAULT CONFIG
+// VAULT CONFIG
 // ------------------------------
-// Accept 10-digit entries. Still locked for now.
 const VAULT = {
   enabled: true,
   digits: 10,
-
-  // Keep false until you truly go live with real prize logic.
   unlockEnabled: false,
-
-  // Optional: when unlockEnabled = true, set the real code here.
-  // (Do NOT ship the real code in client JS when the pot is meaningful.)
   unlockCode: "0000000000"
 };
 
-// Leak numbers more often without fully committing to transparency yet.
+// ------------------------------
+// SOL LEAK (troll panel ticker)
+// ------------------------------
 const SOL_LEAK = {
   enabled: true,
   flashChance: 0.18,
@@ -80,7 +85,7 @@ const ANSWERS = [
 ];
 
 // ------------------------------
-// EGG CONFIG (private knobs)
+// EGG CONFIG
 // ------------------------------
 const TIME_GATE = { hour: 3, minute: 33, windowSeconds: 60 };
 const RARE_THINK_CHANCE = 0.05;
@@ -110,13 +115,16 @@ function glitchPulse() {
   setTimeout(() => document.body.classList.remove("glitch"), 170);
 }
 
-function clearResponseModes() {
+// ------------------------------
+// ASK UI helpers (ONLY ask uses these)
+// ------------------------------
+function clearAskResponse() {
   if (!responseEl) return;
   responseEl.classList.remove("show", "linkmode", "long");
   responseEl.textContent = "";
 }
 
-function showResponseFor(ms, text = "?", opts = {}) {
+function showAskResponseFor(ms, text = "?", opts = {}) {
   if (!responseEl) return;
 
   responseEl.classList.toggle("linkmode", !!opts.linkmode);
@@ -127,12 +135,12 @@ function showResponseFor(ms, text = "?", opts = {}) {
 
   responseEl.classList.add("show");
 
-  clearTimeout(showResponseFor._t);
-  showResponseFor._t = setTimeout(() => clearResponseModes(), ms);
+  clearTimeout(showAskResponseFor._t);
+  showAskResponseFor._t = setTimeout(() => clearAskResponse(), ms);
 }
 
-function showResponse(text = "?", opts = {}) {
-  showResponseFor(2500, text, opts);
+function showAskResponse(text = "?", opts = {}) {
+  showAskResponseFor(2500, text, opts);
 }
 
 function resolveAnswer(userText) {
@@ -149,7 +157,24 @@ function resolveAnswer(userText) {
   return null;
 }
 
-// NEW: detect numeric attempt (10 digits)
+// ------------------------------
+// VAULT helpers (NEVER touches ask response)
+// ------------------------------
+function setVaultSub(text) {
+  if (vaultSubEl) vaultSubEl.textContent = text;
+}
+
+function showVaultResult(text) {
+  if (!vaultResultEl) return;
+  vaultResultEl.textContent = text;
+  vaultResultEl.classList.add("show");
+  clearTimeout(showVaultResult._t);
+  showVaultResult._t = setTimeout(() => {
+    vaultResultEl.classList.remove("show");
+    vaultResultEl.textContent = "";
+  }, 9000);
+}
+
 function parseVaultAttempt(text) {
   if (!VAULT.enabled) return null;
   const raw = (text || "").trim();
@@ -157,80 +182,51 @@ function parseVaultAttempt(text) {
 
   const digitsOnly = raw.replace(/\D/g, "");
   if (digitsOnly.length !== VAULT.digits) return null;
+
   return digitsOnly;
 }
 
-// NEW (Option B): handle vault attempt from dedicated vault UI
-function handleVaultAttempt(rawText) {
-  const attempt = parseVaultAttempt(rawText);
+let vaultBusy = false;
 
+function handleVaultTry() {
+  if (!VAULT.enabled) return;
+  if (vaultBusy) return;
+
+  const attempt = parseVaultAttempt(vaultInputEl ? vaultInputEl.value : "");
   if (!attempt) {
-    if (vaultSubEl) vaultSubEl.textContent = "need 10 digits";
     glitchPulse();
-    showResponseFor(2200, "?", {});
+    setVaultSub("need 10 digits");
+    showVaultResult("??????????");
     return;
   }
 
-  if (vaultSubEl) vaultSubEl.textContent = "checking…";
+  vaultBusy = true;
+  setVaultSub("checking…");
+  if (vaultStatusEl) vaultStatusEl.textContent = "LOCKED";
+
+  // clear input immediately (feels secure)
+  if (vaultInputEl) vaultInputEl.value = "";
+
+  const delay = 650 + Math.floor(Math.random() * 650);
 
   setTimeout(() => {
     glitchPulse();
 
     if (VAULT.unlockEnabled && attempt === VAULT.unlockCode) {
-      if (vaultSubEl) vaultSubEl.textContent = "…";
-      showResponseFor(9000, "UNLOCKED", { long: true });
+      if (vaultStatusEl) vaultStatusEl.textContent = "UNLOCKED";
+      setVaultSub("…");
+      showVaultResult("UNLOCKED");
+      vaultBusy = false;
       return;
     }
 
+    // masked echo (numbers exist, still denies certainty)
     const masked = attempt.slice(0, 2) + "????????" + attempt.slice(-2);
-    if (vaultSubEl) vaultSubEl.textContent = "timing window missed";
-    showResponseFor(9000, masked, { long: true });
-  }, 600 + Math.floor(Math.random() * 500));
-}
+    setVaultSub("timing window missed");
+    showVaultResult(masked);
 
-// ------------------------------
-// Input UX: force numeric keypad where appropriate
-// ------------------------------
-// Option A: make Ask box numeric-friendly so iOS shows keypad
-if (askInput) {
-  askInput.setAttribute("inputmode", "numeric");
-  askInput.setAttribute("pattern", "[0-9]*");
-  askInput.setAttribute("autocomplete", "off");
-  askInput.setAttribute("autocapitalize", "off");
-  askInput.setAttribute("spellcheck", "false");
-
-  // keep it clean while typing (digits only, max VAULT.digits)
-  askInput.addEventListener("input", () => {
-    if (!VAULT.enabled) return;
-    askInput.value = askInput.value.replace(/\D/g, "").slice(0, VAULT.digits);
-  });
-}
-
-// Option B: if vault panel exists, make it numeric too
-if (vaultInputEl) {
-  vaultInputEl.setAttribute("inputmode", "numeric");
-  vaultInputEl.setAttribute("pattern", "[0-9]*");
-  vaultInputEl.setAttribute("autocomplete", "off");
-  vaultInputEl.setAttribute("autocapitalize", "off");
-  vaultInputEl.setAttribute("spellcheck", "false");
-
-  vaultInputEl.addEventListener("input", () => {
-    vaultInputEl.value = vaultInputEl.value.replace(/\D/g, "").slice(0, VAULT.digits);
-  });
-
-  vaultInputEl.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    handleVaultAttempt(vaultInputEl.value);
-    vaultInputEl.value = "";
-  });
-}
-
-if (vaultBtnEl && vaultInputEl) {
-  vaultBtnEl.addEventListener("click", () => {
-    handleVaultAttempt(vaultInputEl.value);
-    vaultInputEl.value = "";
-  });
+    vaultBusy = false;
+  }, delay);
 }
 
 // ------------------------------
@@ -245,7 +241,7 @@ if (reveals && reveals.length) {
 }
 
 // ------------------------------
-// EGG #0: Micro shift (once per session)
+// EGG: Micro shift (once per session)
 // ------------------------------
 (function microMoveOncePerSession() {
   if (!markEl) return;
@@ -257,24 +253,32 @@ if (reveals && reveals.length) {
 })();
 
 // ------------------------------
-// EGG #5: DevTools whisper
+// EGG: DevTools whisper
 // ------------------------------
 (function devtoolsWhisper() {
   try { console.log(DEVTOOLS_WHISPER); } catch (_) {}
 })();
 
 // ------------------------------
-// Ask bar behavior
+// ASK behavior (stays TEXT; never numeric)
 // ------------------------------
-let busy = false;
+let askBusy = false;
 
 if (askInput) {
+  // IMPORTANT: keep Ask as text (fixes your iOS keypad issue)
+  askInput.setAttribute("type", "text");
+  askInput.setAttribute("inputmode", "text");
+  askInput.setAttribute("pattern", "");
+  askInput.setAttribute("autocomplete", "off");
+  askInput.setAttribute("autocapitalize", "off");
+  askInput.setAttribute("spellcheck", "false");
+
   askInput.addEventListener("keydown", (e) => {
     if (e.key !== "Enter") return;
     e.preventDefault();
-    if (busy) return;
+    if (askBusy) return;
 
-    busy = true;
+    askBusy = true;
 
     const userText = (askInput.value || "").trim();
     askInput.value = "";
@@ -282,10 +286,6 @@ if (askInput) {
     const communityHit = isCommunityHit(userText) && !!FACTS.community;
     const maybeAnswer = resolveAnswer(userText);
 
-    // NEW: numeric vault attempt via Ask box (Option A)
-    const vaultAttempt = parseVaultAttempt(userText);
-
-    // BASE delay feels like "thinking"
     let delay = 360 + Math.floor(Math.random() * 220);
 
     const timeGate = inTimeGateUTC();
@@ -295,18 +295,16 @@ if (askInput) {
     const veryRareSilent = Math.random() < VERY_RARE_SILENT_CHANCE;
 
     if (communityHit) delay = 420;
-    if (vaultAttempt) delay = 780 + Math.floor(Math.random() * 520);
     if (maybeAnswer) delay = 900 + Math.floor(Math.random() * 450);
 
     setTimeout(() => {
       if (veryRareSilent) {
-        busy = false;
+        askBusy = false;
         return;
       }
 
-      // COMMUNITY CTA (compact, inside ask box)
       if (communityHit) {
-        showResponseFor(25000, "", {
+        showAskResponseFor(25000, "", {
           linkmode: true,
           html: `
             COMMUNITY<br>
@@ -315,52 +313,57 @@ if (askInput) {
             </a>
           `
         });
-        busy = false;
+        askBusy = false;
         return;
       }
 
-      // VAULT ATTEMPT FLOW
-      if (vaultAttempt) {
-        glitchPulse();
-
-        if (VAULT.unlockEnabled && vaultAttempt === VAULT.unlockCode) {
-          showResponseFor(9000, "UNLOCKED", { long: true });
-          busy = false;
-          return;
-        }
-
-        const masked = vaultAttempt.slice(0, 2) + "????????" + vaultAttempt.slice(-2);
-        showResponseFor(9000, masked, { long: true });
-        busy = false;
-        return;
-      }
-
-      // Normal answer mode (when enabled)
       if (maybeAnswer) {
         const long = maybeAnswer.length > 24;
-        showResponseFor(6000, maybeAnswer, { long });
-        busy = false;
+        showAskResponseFor(6000, maybeAnswer, { long });
+        askBusy = false;
         return;
       }
 
       if (rareThink || timeGate) {
-        showResponse("?");
-        busy = false;
+        showAskResponse("?");
+        askBusy = false;
         return;
       }
 
       glitchPulse();
-      showResponse("?");
-      busy = false;
+      showAskResponse("?");
+      askBusy = false;
     }, delay);
   });
 }
 
 // ------------------------------
-// Subtle "presence" while focused
+// VAULT events (separate from ask)
+// ------------------------------
+if (vaultInputEl) {
+  vaultInputEl.addEventListener("input", () => {
+    // digits only, max 10
+    vaultInputEl.value = vaultInputEl.value.replace(/\D/g, "").slice(0, VAULT.digits);
+  });
+
+  vaultInputEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    handleVaultTry();
+  });
+}
+
+if (vaultBtnEl) {
+  vaultBtnEl.addEventListener("click", (e) => {
+    e.preventDefault();
+    handleVaultTry();
+  });
+}
+
+// ------------------------------
+// Subtle "presence" while ASK focused (ask only)
 // ------------------------------
 let focusTimer = null;
-
 if (askInput) {
   askInput.addEventListener("focus", () => {
     const chance = 0.12;
@@ -379,12 +382,7 @@ if (askInput) {
 // LOCKED TROLL PANEL (non-interactive)
 // ------------------------------
 (() => {
-  const comboEl = document.getElementById("trollCombo");
-  const solEl = document.getElementById("solTicker");
-  const subEl = document.getElementById("trollSub");
-  const statusEl = document.getElementById("lockStatus");
-
-  if (!comboEl || !solEl || !subEl || !statusEl) return;
+  if (!comboEl || !solEl || !trollSubEl || !lockStatusEl) return;
 
   comboEl.style.pointerEvents = "none";
   solEl.style.pointerEvents = "none";
@@ -432,8 +430,8 @@ if (askInput) {
   ];
 
   const failCycle = () => {
-    subEl.textContent = msgs[(Math.random() * msgs.length) | 0];
-    statusEl.textContent = "LOCKED";
+    trollSubEl.textContent = msgs[(Math.random() * msgs.length) | 0];
+    lockStatusEl.textContent = "LOCKED";
   };
 
   const fmt = (n) => n.toFixed(2);
