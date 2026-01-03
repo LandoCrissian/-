@@ -1,10 +1,18 @@
 // Small, deliberate. No analytics. No storage.
 console.log("?");
 
+// ------------------------------
+// DOM
+// ------------------------------
 const reveals = document.querySelectorAll(".reveal");
 const responseEl = document.getElementById("response");
 const askInput = document.getElementById("askInput");
 const markEl = document.getElementById("mark");
+
+// OPTIONAL (Option B): dedicated vault panel elements
+const vaultInputEl = document.getElementById("vaultInput");
+const vaultBtnEl = document.getElementById("vaultBtn");
+const vaultSubEl = document.getElementById("vaultSub");
 
 // ------------------------------
 // LOCKED MODE (v1 freeze)
@@ -26,6 +34,7 @@ const FACTS = {
 // - triggers on keywords OR if they paste the link
 // ------------------------------
 const COMMUNITY_MATCH = /\b(community|comms|chat|talk|join|group|hub|members|updates|announcements)\b/i;
+
 function isCommunityHit(text) {
   const t = (text || "").toLowerCase();
   if (!t) return false;
@@ -36,7 +45,7 @@ function isCommunityHit(text) {
 }
 
 // ------------------------------
-// NUMERIC / VAULT CONFIG (new)
+// NUMERIC / VAULT CONFIG
 // ------------------------------
 // Accept 10-digit entries. Still locked for now.
 const VAULT = {
@@ -44,7 +53,6 @@ const VAULT = {
   digits: 10,
 
   // Keep false until you truly go live with real prize logic.
-  // When false: always "LOCKED" (but feels real).
   unlockEnabled: false,
 
   // Optional: when unlockEnabled = true, set the real code here.
@@ -55,12 +63,9 @@ const VAULT = {
 // Leak numbers more often without fully committing to transparency yet.
 const SOL_LEAK = {
   enabled: true,
-  // Probability per tick to show a number flash
-  flashChance: 0.18,     // 18% flashes (rest stays ?)
-  // How long a flash stays visible (ms)
+  flashChance: 0.18,
   flashMs: 240,
-  // Range for tease numbers (display only)
-  min: 0.00,
+  min: 0.0,
   max: 99.99
 };
 
@@ -89,10 +94,6 @@ const DEVTOOLS_WHISPER = "// you’re paying attention";
 // ------------------------------
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function clamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
 }
 
 function inTimeGateUTC() {
@@ -127,9 +128,7 @@ function showResponseFor(ms, text = "?", opts = {}) {
   responseEl.classList.add("show");
 
   clearTimeout(showResponseFor._t);
-  showResponseFor._t = setTimeout(() => {
-    clearResponseModes();
-  }, ms);
+  showResponseFor._t = setTimeout(() => clearResponseModes(), ms);
 }
 
 function showResponse(text = "?", opts = {}) {
@@ -150,17 +149,88 @@ function resolveAnswer(userText) {
   return null;
 }
 
-// NEW: detect numeric attempt
+// NEW: detect numeric attempt (10 digits)
 function parseVaultAttempt(text) {
   if (!VAULT.enabled) return null;
   const raw = (text || "").trim();
   if (!raw) return null;
 
-  // keep only digits
   const digitsOnly = raw.replace(/\D/g, "");
   if (digitsOnly.length !== VAULT.digits) return null;
-
   return digitsOnly;
+}
+
+// NEW (Option B): handle vault attempt from dedicated vault UI
+function handleVaultAttempt(rawText) {
+  const attempt = parseVaultAttempt(rawText);
+
+  if (!attempt) {
+    if (vaultSubEl) vaultSubEl.textContent = "need 10 digits";
+    glitchPulse();
+    showResponseFor(2200, "?", {});
+    return;
+  }
+
+  if (vaultSubEl) vaultSubEl.textContent = "checking…";
+
+  setTimeout(() => {
+    glitchPulse();
+
+    if (VAULT.unlockEnabled && attempt === VAULT.unlockCode) {
+      if (vaultSubEl) vaultSubEl.textContent = "…";
+      showResponseFor(9000, "UNLOCKED", { long: true });
+      return;
+    }
+
+    const masked = attempt.slice(0, 2) + "????????" + attempt.slice(-2);
+    if (vaultSubEl) vaultSubEl.textContent = "timing window missed";
+    showResponseFor(9000, masked, { long: true });
+  }, 600 + Math.floor(Math.random() * 500));
+}
+
+// ------------------------------
+// Input UX: force numeric keypad where appropriate
+// ------------------------------
+// Option A: make Ask box numeric-friendly so iOS shows keypad
+if (askInput) {
+  askInput.setAttribute("inputmode", "numeric");
+  askInput.setAttribute("pattern", "[0-9]*");
+  askInput.setAttribute("autocomplete", "off");
+  askInput.setAttribute("autocapitalize", "off");
+  askInput.setAttribute("spellcheck", "false");
+
+  // keep it clean while typing (digits only, max VAULT.digits)
+  askInput.addEventListener("input", () => {
+    if (!VAULT.enabled) return;
+    askInput.value = askInput.value.replace(/\D/g, "").slice(0, VAULT.digits);
+  });
+}
+
+// Option B: if vault panel exists, make it numeric too
+if (vaultInputEl) {
+  vaultInputEl.setAttribute("inputmode", "numeric");
+  vaultInputEl.setAttribute("pattern", "[0-9]*");
+  vaultInputEl.setAttribute("autocomplete", "off");
+  vaultInputEl.setAttribute("autocapitalize", "off");
+  vaultInputEl.setAttribute("spellcheck", "false");
+
+  vaultInputEl.addEventListener("input", () => {
+    vaultInputEl.value = vaultInputEl.value.replace(/\D/g, "").slice(0, VAULT.digits);
+  });
+
+  vaultInputEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    handleVaultAttempt(vaultInputEl.value);
+    vaultInputEl.value = "";
+  });
+}
+
+if (vaultBtnEl && vaultInputEl) {
+  vaultBtnEl.addEventListener("click", () => {
+    handleVaultAttempt(vaultInputEl.value);
+    vaultInputEl.value = "";
+  });
 }
 
 // ------------------------------
@@ -212,7 +282,7 @@ if (askInput) {
     const communityHit = isCommunityHit(userText) && !!FACTS.community;
     const maybeAnswer = resolveAnswer(userText);
 
-    // NEW: numeric vault attempt
+    // NEW: numeric vault attempt via Ask box (Option A)
     const vaultAttempt = parseVaultAttempt(userText);
 
     // BASE delay feels like "thinking"
@@ -224,13 +294,8 @@ if (askInput) {
     const rareThink = Math.random() < RARE_THINK_CHANCE;
     const veryRareSilent = Math.random() < VERY_RARE_SILENT_CHANCE;
 
-    // Community should respond quickly + deliberate
     if (communityHit) delay = 420;
-
-    // Vault attempt should feel serious + deliberate
     if (vaultAttempt) delay = 780 + Math.floor(Math.random() * 520);
-
-    // Answers should feel deliberate (slower, no glitch)
     if (maybeAnswer) delay = 900 + Math.floor(Math.random() * 450);
 
     setTimeout(() => {
@@ -254,26 +319,17 @@ if (askInput) {
         return;
       }
 
-      // NEW: VAULT ATTEMPT FLOW
+      // VAULT ATTEMPT FLOW
       if (vaultAttempt) {
-        // micro “checking” pulse (no words required)
         glitchPulse();
 
-        // If you ever enable unlock: verify here
         if (VAULT.unlockEnabled && vaultAttempt === VAULT.unlockCode) {
-          // Keep this subtle. You can change later.
           showResponseFor(9000, "UNLOCKED", { long: true });
           busy = false;
           return;
         }
 
-        // Default locked response (feels like a real attempt happened)
-        // Shows their attempt masked — numbers exist, but still denies certainty.
-        const masked =
-          vaultAttempt.slice(0, 2) +
-          "????????" +
-          vaultAttempt.slice(-2);
-
+        const masked = vaultAttempt.slice(0, 2) + "????????" + vaultAttempt.slice(-2);
         showResponseFor(9000, masked, { long: true });
         busy = false;
         return;
@@ -380,7 +436,6 @@ if (askInput) {
     statusEl.textContent = "LOCKED";
   };
 
-  // NEW: ticker leaks numbers more often, but still mostly ?
   const fmt = (n) => n.toFixed(2);
 
   const tickSol = () => {
@@ -389,22 +444,18 @@ if (askInput) {
       return;
     }
 
-    // Mostly obscured
     const r = Math.random();
 
-    // 55%: pure "????"
     if (r < 0.55) {
       solEl.textContent = "????";
       return;
     }
 
-    // 27%: spaced tease "? ? ? ?"
     if (r < 0.82) {
       solEl.textContent = "? ? ? ?";
       return;
     }
 
-    // 18%: flash real-ish number briefly
     if (Math.random() < SOL_LEAK.flashChance) {
       const val = SOL_LEAK.min + Math.random() * (SOL_LEAK.max - SOL_LEAK.min);
       solEl.textContent = fmt(val);
@@ -412,7 +463,6 @@ if (askInput) {
       return;
     }
 
-    // fallback
     solEl.textContent = "????";
   };
 
