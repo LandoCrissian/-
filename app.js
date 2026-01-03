@@ -25,6 +25,69 @@ const trollSubEl = document.getElementById("trollSub");
 const lockStatusEl = document.getElementById("lockStatus");
 
 // ------------------------------
+// LINK: VAULT -> TOP PANEL (UNLOCK)
+// ------------------------------
+let topOverrideTimer = null;
+let topSubOverrideTimer = null;
+
+function setTopSub(text, ms = 1400) {
+  if (!trollSubEl) return;
+  const prev = trollSubEl.textContent;
+
+  clearTimeout(topSubOverrideTimer);
+  trollSubEl.textContent = text;
+
+  topSubOverrideTimer = setTimeout(() => {
+    trollSubEl.textContent = prev;
+  }, ms);
+}
+
+function flashTopComboFromAttempt(attemptDigits) {
+  if (!comboEl) return;
+
+  // Convert 10 digits into a "key-like" triplet: 4-4-2 padded to 4
+  // Example: 1234567890 -> 1234-5678-90Q?
+  const a = attemptDigits.slice(0, 4);
+  const b = attemptDigits.slice(4, 8);
+  const c = attemptDigits.slice(8, 10);
+
+  // add 2 chars to make it feel like the existing 4-char block
+  const pad = "??";
+  const temp = `${a}-${b}-${c}${pad}`;
+
+  const prev = comboEl.textContent;
+  clearTimeout(topOverrideTimer);
+
+  // show "sync" combo
+  comboEl.textContent = temp;
+
+  // subtle status flicker
+  if (lockStatusEl) lockStatusEl.textContent = "LOCKED";
+
+  topOverrideTimer = setTimeout(() => {
+    comboEl.textContent = prev; // returns to mutated stream
+  }, 1600);
+}
+
+function burstSolLeak(ms = 1200) {
+  // temporarily increase chance of number flash after a vault attempt
+  if (!SOL_LEAK || !SOL_LEAK.enabled) return;
+
+  const prev = {
+    flashChance: SOL_LEAK.flashChance,
+    flashMs: SOL_LEAK.flashMs
+  };
+
+  SOL_LEAK.flashChance = 0.75; // big leak
+  SOL_LEAK.flashMs = 300;
+
+  setTimeout(() => {
+    SOL_LEAK.flashChance = prev.flashChance;
+    SOL_LEAK.flashMs = prev.flashMs;
+  }, ms);
+}
+
+// ------------------------------
 // LOCKED MODE (v1 freeze)
 // ------------------------------
 const ANSWER_MODE = false;
@@ -201,10 +264,15 @@ function handleVaultTry() {
   }
 
   vaultBusy = true;
+
+  // >>> NEW: make the TOP PANEL react (no more autopilot feel)
+  setTopSub("verifying…");
+  flashTopComboFromAttempt(attempt);
+  burstSolLeak(1200);
+
   setVaultSub("checking…");
   if (vaultStatusEl) vaultStatusEl.textContent = "LOCKED";
 
-  // clear input immediately (feels secure)
   if (vaultInputEl) vaultInputEl.value = "";
 
   const delay = 650 + Math.floor(Math.random() * 650);
@@ -216,14 +284,21 @@ function handleVaultTry() {
       if (vaultStatusEl) vaultStatusEl.textContent = "UNLOCKED";
       setVaultSub("…");
       showVaultResult("UNLOCKED");
+
+      // >>> NEW: top panel reacts to success too
+      setTopSub("access granted", 2000);
+      if (lockStatusEl) lockStatusEl.textContent = "UNLOCKED";
+
       vaultBusy = false;
       return;
     }
 
-    // masked echo (numbers exist, still denies certainty)
     const masked = attempt.slice(0, 2) + "????????" + attempt.slice(-2);
     setVaultSub("timing window missed");
     showVaultResult(masked);
+
+    // >>> NEW: top panel reacts to failure
+    setTopSub("checksum mismatch", 1600);
 
     vaultBusy = false;
   }, delay);
