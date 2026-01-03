@@ -66,49 +66,51 @@
 
       <div class="gap"></div>
 
-      <!-- LOCKED TROLL PANEL (non-interactive) -->
-<div class="troll reveal" aria-hidden="true">
-  <div class="troll-row">
-    <span class="troll-label">unlock</span>
-    <span class="troll-status" id="lockStatus">LOCKED</span>
-  </div>
+      <!-- TOP PANEL (non-interactive, but reacts to vault attempts via JS) -->
+      <div class="troll reveal" aria-hidden="true">
+        <div class="troll-row">
+          <span class="troll-label">unlock</span>
+          <span class="troll-status" id="lockStatus">LOCKED</span>
+        </div>
 
-  <div class="troll-combo" id="trollCombo">????-????-????</div>
+        <div class="troll-combo" id="trollCombo">????-????-????</div>
 
-  <div class="troll-row">
-    <span class="troll-label">sol</span>
-    <span class="troll-ticker" id="solTicker">????</span>
-  </div>
+        <div class="troll-row">
+          <span class="troll-label">sol</span>
+          <span class="troll-ticker" id="solTicker">????</span>
+        </div>
 
-  <div class="troll-sub" id="trollSub">attempting…</div>
-</div>
+        <div class="troll-sub" id="trollSub">attempting…</div>
+      </div>
 
       <!-- VAULT PANEL (interactive) -->
-<div class="vault reveal" id="vault">
-  <div class="vault-row">
-    <span class="vault-left">VAULT · ENTER 10 DIGITS</span>
-    <span class="vault-right" id="vaultStatus">LOCKED</span>
-  </div>
+      <div class="vault reveal" id="vault" role="group" aria-label="Vault">
+        <div class="vault-row">
+          <!-- ✅ reads as ONE idea -->
+          <span class="vault-left">VAULT · 10 DIGITS</span>
+          <span class="vault-right" id="vaultStatus">LOCKED</span>
+        </div>
 
-  <div class="vault-inputrow">
-    <input
-      id="vaultInput"
-      type="tel"
-      inputmode="numeric"
-      pattern="[0-9]*"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder="??????????"
-      aria-label="Enter 10 digits"
-    />
-    <button id="vaultBtn" type="button" aria-label="Try code">TRY</button>
-  </div>
+        <div class="vault-inputrow">
+          <input
+            id="vaultInput"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="??????????"
+            aria-label="Vault code (10 digits)"
+          />
+          <button id="vaultBtn" type="button" aria-label="Try code">TRY</button>
+        </div>
 
-  <div class="vault-sub" id="vaultSub">timing window missed</div>
-  <div class="vault-result" id="vaultResult" aria-live="polite"></div>
-</div>
+        <div class="vault-sub" id="vaultSub">still early</div>
+        <div class="vault-result" id="vaultResult" aria-live="polite"></div>
+      </div>
 
-
+      <!-- ASK (text-only, separate) -->
       <div class="ask reveal" id="ask">
         <label class="sr" for="askInput">Ask</label>
         <input
@@ -116,6 +118,8 @@
           type="text"
           inputmode="text"
           autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
           spellcheck="false"
           placeholder="ask"
         />
